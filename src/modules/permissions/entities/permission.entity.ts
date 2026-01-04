@@ -1,4 +1,3 @@
-// src/modules/permission/entities/permission.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -7,7 +6,7 @@ import {
   Unique,
 } from 'typeorm';
 import { HttpMethod } from '../enums/http-method.permission';
-import { Role } from 'src/modules/roles/entities/role.entity';
+import { Role } from 'src/modules/role/entities/role.entity';
 
 @Entity('permissions')
 @Unique(['apiPath', 'method'])

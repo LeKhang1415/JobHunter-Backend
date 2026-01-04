@@ -6,8 +6,8 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
-import { Gender } from '../enums/users-gender.enum';
-import { Role } from 'src/modules/roles/entities/role.entity';
+import { Gender } from '../../../common/enums/users-gender.enum';
+import { Role } from 'src/modules/role/entities/role.entity';
 
 @Entity('users')
 export class User {
@@ -26,7 +26,7 @@ export class User {
   @Column({ type: 'enum', enum: Gender, default: Gender.OTHER })
   gender: Gender;
 
-  @Column()
+  @Column({ nullable: true })
   userImgUrl: string;
 
   @Column({ nullable: false })

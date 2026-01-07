@@ -7,8 +7,10 @@ import { UsersModule } from './modules/users/users.module';
 import { RoleModule } from './modules/role/role.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { JwtGuard } from './common/guards/jwt.guard';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -33,6 +35,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     UsersModule,
     RoleModule,
     PermissionsModule,
+    JwtModule.register({}),
     AuthModule,
   ],
   controllers: [AppController],
@@ -41,6 +44,10 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     {
       provide: APP_INTERCEPTOR,
       useClass: TransformInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtGuard,
     },
   ],
 })

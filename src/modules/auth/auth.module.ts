@@ -7,11 +7,17 @@ import { BcryptProvider } from './providers/bcrypt.provider';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../users/entities/user.entity';
 import { RoleModule } from '../role/role.module';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule } from '@nestjs/config';
+import { GenerateTokenProvider } from './providers/generate-token.provider';
+import jwtConfig from 'src/config/jwt.config';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
     forwardRef(() => UsersModule),
+    ConfigModule.forFeature(jwtConfig),
+    JwtModule.registerAsync(jwtConfig.asProvider()),
     RoleModule,
   ],
   providers: [
@@ -21,6 +27,7 @@ import { RoleModule } from '../role/role.module';
       useClass: BcryptProvider,
     },
     BcryptProvider,
+    GenerateTokenProvider,
   ],
   controllers: [AuthController],
 })

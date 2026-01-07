@@ -1,15 +1,32 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Res } from '@nestjs/common';
 import { RegisterUser } from './dtos/register-user.dto';
 import { AuthService } from './auth.service';
 import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
+import { Public } from 'src/common/decorators/public.decorator';
+import { Response } from 'express';
+import { LoginUser } from './dtos/login-user.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @ResponseMessage('Đăng ký thành công')
   @Post('register')
-  async register(@Body() registerUser: RegisterUser) {
-    return this.authService.register(registerUser);
+  async register(
+    @Body() registerUser: RegisterUser,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.authService.register(registerUser, response);
+  }
+
+  @Public()
+  @ResponseMessage('Đăng nhập thành công')
+  @Post('login')
+  async login(
+    @Body() loginUser: LoginUser,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.authService.login(loginUser, response);
   }
 }

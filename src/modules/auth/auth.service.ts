@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { RegisterUser } from './dtos/register-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersService } from '../users/users.service';
@@ -7,6 +12,9 @@ import { User } from '../users/entities/user.entity';
 import { Repository } from 'typeorm';
 import { RoleService } from '../role/role.service';
 import { RoleEnum } from 'src/common/enums/role.enum';
+import { GenerateTokenProvider } from './providers/generate-token.provider';
+import { Response } from 'express';
+import { LoginUser } from './dtos/login-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -21,8 +29,10 @@ export class AuthService {
     private readonly usersRepository: Repository<User>,
 
     private readonly bcryptProvider: BcryptProvider,
+
+    private readonly generateTokenProvider: GenerateTokenProvider,
   ) {}
-  async register(registerUser: RegisterUser) {
+  async register(registerUser: RegisterUser, response: Response) {
     const { email, name, password, gender, address, recruiter } = registerUser;
     if (await this.usersService.existsByEmail(email)) {
       throw new BadRequestException('Email đã tồn tại');
@@ -43,13 +53,55 @@ export class AuthService {
 
     newUser.role = role;
 
+    const accessToken =
+      await this.generateTokenProvider.generateTokenWithCookie(
+        newUser,
+        response,
+      );
+
     const savedUser = await this.usersRepository.save(newUser);
 
     return {
-      id: savedUser.id,
-      email: savedUser.email,
-      name: savedUser.name,
-      role: savedUser.role.name,
+      accessToken,
+      user: {
+        id: savedUser.id,
+        email: savedUser.email,
+        name: savedUser.name,
+        role: savedUser.role.name,
+      },
+    };
+  }
+
+  async login(loginUser: LoginUser, response: Response) {
+    const existingUser = await this.usersService.findByEmail(loginUser.email);
+
+    if (!existingUser) {
+      throw new UnauthorizedException('Email hoặc mật khẩu không chính xác');
+    }
+
+    let isEqual = await this.bcryptProvider.comparePassword(
+      loginUser.password,
+      existingUser.password,
+    );
+    if (!isEqual) {
+      throw new BadRequestException(
+        'Mật khẩu không chính xác, vui lòng thử lại.',
+      );
+    }
+
+    const accessToken =
+      await this.generateTokenProvider.generateTokenWithCookie(
+        existingUser,
+        response,
+      );
+    return {
+      accessToken,
+      user: {
+        id: existingUser.id,
+        email: existingUser.email,
+        name: existingUser.name,
+        role: existingUser.role.name,
+      },
     };
   }
 }

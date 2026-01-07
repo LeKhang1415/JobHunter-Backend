@@ -13,6 +13,7 @@ export class UsersService {
   async existsByEmail(email: string): Promise<boolean> {
     const existsUser = await this.usersRepository.findOne({
       where: { email },
+      relations: ['role'],
     });
 
     if (existsUser) {
@@ -20,5 +21,12 @@ export class UsersService {
     } else {
       return false;
     }
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    return await this.usersRepository.findOne({
+      where: { email },
+      relations: ['role'],
+    });
   }
 }

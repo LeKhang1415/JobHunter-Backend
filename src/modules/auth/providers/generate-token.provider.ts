@@ -5,6 +5,7 @@ import jwtConfig from 'src/config/jwt.config';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { ConfigType } from '@nestjs/config';
 import { Response } from 'express';
+import { RoleService } from 'src/modules/role/role.service';
 
 @Injectable()
 export class GenerateTokenProvider {
@@ -35,6 +36,7 @@ export class GenerateTokenProvider {
 
   async generateTokenWithCookie(
     user: User,
+    permissions: string[],
     response: Response,
   ): Promise<string> {
     const [accessToken, refreshToken] = await Promise.all([
@@ -44,6 +46,7 @@ export class GenerateTokenProvider {
         {
           email: user.email,
           role: user.role.name,
+          permissions,
         },
       ),
 

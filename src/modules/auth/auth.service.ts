@@ -53,9 +53,12 @@ export class AuthService {
 
     newUser.role = role;
 
+    const permissions = await this.roleService.getPermissionByName(role.name);
+
     const accessToken =
       await this.generateTokenProvider.generateTokenWithCookie(
         newUser,
+        permissions,
         response,
       );
 
@@ -84,14 +87,16 @@ export class AuthService {
       existingUser.password,
     );
     if (!isEqual) {
-      throw new BadRequestException(
-        'Mật khẩu không chính xác, vui lòng thử lại.',
-      );
+      throw new UnauthorizedException('Email hoặc mật khẩu không chính xác');
     }
+    const permissions = await this.roleService.getPermissionByName(
+      existingUser.role.name,
+    );
 
     const accessToken =
       await this.generateTokenProvider.generateTokenWithCookie(
         existingUser,
+        permissions,
         response,
       );
     return {

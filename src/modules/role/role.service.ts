@@ -12,6 +12,7 @@ export class RoleService {
   async findByName(name: string): Promise<Role> {
     const role = await this.roleRepository.findOne({
       where: { name },
+      relations: ['permissions'],
     });
 
     if (!role) {
@@ -19,5 +20,16 @@ export class RoleService {
     }
 
     return role;
+  }
+
+  async getPermissionByName(name: string): Promise<string[]> {
+    const role = await this.findByName(name);
+
+    let permissions: string[] = [];
+    role.permissions.forEach((permission) =>
+      permissions.push(`${permission.method} ${permission.apiPath}`),
+    );
+
+    return permissions;
   }
 }

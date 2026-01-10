@@ -15,6 +15,7 @@ import { RoleEnum } from 'src/common/enums/role.enum';
 import { GenerateTokenProvider } from './providers/generate-token.provider';
 import { Response } from 'express';
 import { LoginUser } from './dtos/login-user.dto';
+import { HashingProvider } from './providers/hashing.provider';
 
 @Injectable()
 export class AuthService {
@@ -28,7 +29,7 @@ export class AuthService {
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
 
-    private readonly bcryptProvider: BcryptProvider,
+    @Inject(HashingProvider) private readonly hashingProvider: HashingProvider,
 
     private readonly generateTokenProvider: GenerateTokenProvider,
   ) {}
@@ -37,7 +38,7 @@ export class AuthService {
     if (await this.usersService.existsByEmail(email)) {
       throw new BadRequestException('Email đã tồn tại');
     }
-    const hashedPassword = await this.bcryptProvider.hashPassword(password);
+    const hashedPassword = await this.hashingProvider.hashPassword(password);
 
     const newUser = this.usersRepository.create({
       email,
@@ -82,7 +83,7 @@ export class AuthService {
       throw new UnauthorizedException('Email hoặc mật khẩu không chính xác');
     }
 
-    let isEqual = await this.bcryptProvider.comparePassword(
+    let isEqual = await this.hashingProvider.comparePassword(
       loginUser.password,
       existingUser.password,
     );
@@ -108,5 +109,9 @@ export class AuthService {
         role: existingUser.role.name,
       },
     };
+  }
+
+  async logout(response: Response): Promise<void> {
+    this.generateTokenProvider.clearRefreshTokenCookie(response);
   }
 }

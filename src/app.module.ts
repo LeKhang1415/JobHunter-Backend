@@ -12,12 +12,14 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { JwtGuard } from './common/guards/jwt.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { PermissionGuard } from './common/guards/permission.guard';
+import jwtConfig from './config/jwt.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      load: [jwtConfig],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -36,7 +38,6 @@ import { PermissionGuard } from './common/guards/permission.guard';
     UsersModule,
     RoleModule,
     PermissionsModule,
-    JwtModule.register({}),
     AuthModule,
   ],
   controllers: [AppController],

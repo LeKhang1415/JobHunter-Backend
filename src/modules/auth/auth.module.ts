@@ -16,8 +16,22 @@ import jwtConfig from 'src/config/jwt.config';
   imports: [
     TypeOrmModule.forFeature([User]),
     forwardRef(() => UsersModule),
+
     ConfigModule.forFeature(jwtConfig),
-    JwtModule.registerAsync(jwtConfig.asProvider()),
+
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [jwtConfig.KEY],
+      useFactory: (config: ReturnType<typeof jwtConfig>) => ({
+        secret: config.secret,
+        signOptions: {
+          expiresIn: config.accessTokenTtl,
+          algorithm: 'HS256',
+        },
+      }),
+      global: true,
+    }),
+
     RoleModule,
   ],
   providers: [
@@ -26,7 +40,6 @@ import jwtConfig from 'src/config/jwt.config';
       provide: HashingProvider,
       useClass: BcryptProvider,
     },
-    BcryptProvider,
     GenerateTokenProvider,
   ],
   controllers: [AuthController],

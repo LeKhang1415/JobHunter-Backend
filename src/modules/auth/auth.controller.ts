@@ -29,4 +29,11 @@ export class AuthController {
   ) {
     return this.authService.login(loginUser, response);
   }
+
+  @ResponseMessage('Đăng xuất thành công')
+  @Post('logout')
+  async logout(@Res({ passthrough: true }) response: Response) {
+    await this.authService.logout(response);
+    return null;
+  }
 }

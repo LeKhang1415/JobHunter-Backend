@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -9,12 +10,17 @@ import { IS_PUBLIC } from '../decorators/public.decorator';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { JwtPayload } from 'src/modules/auth/interfaces/jwt-payload.interface';
+import jwtConfig from 'src/config/jwt.config';
+import { ConfigType } from '@nestjs/config';
 
 @Injectable()
 export class JwtGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     private reflector: Reflector,
+
+    @Inject(jwtConfig.KEY)
+    private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
   ) {}
   async canActivate(context: ExecutionContext) {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
@@ -31,7 +37,10 @@ export class JwtGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync(token);
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(
+        token,
+        this.jwtConfiguration,
+      );
 
       request['user'] = payload as JwtPayload;
 
@@ -42,10 +51,11 @@ export class JwtGuard implements CanActivate {
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
-    const authHeader = request.headers['authorization'];
+    const authHeader = request.headers.authorization;
     if (!authHeader) return undefined;
 
-    const [type, token] = authHeader.split(' ');
-    return type === 'Bearer' ? token : undefined;
+    if (!authHeader.startsWith('Bearer ')) return undefined;
+
+    return authHeader.slice(7);
   }
 }

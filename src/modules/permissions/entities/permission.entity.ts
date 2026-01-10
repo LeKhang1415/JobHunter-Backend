@@ -11,8 +11,8 @@ import { Role } from 'src/modules/role/entities/role.entity';
 @Entity('permissions')
 @Unique(['apiPath', 'method'])
 export class Permission {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
   name: string; // USER_READ, USER_CREATE,...

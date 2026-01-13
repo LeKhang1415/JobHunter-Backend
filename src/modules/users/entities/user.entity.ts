@@ -3,11 +3,14 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Gender } from '../../../common/enums/users-gender.enum';
 import { Role } from 'src/modules/role/entities/role.entity';
+import { Company } from 'src/modules/company/entities/company.entity';
+import { Resume } from 'src/modules/resume/entities/resume.entity';
 
 @Entity('users')
 export class User {
@@ -36,4 +39,10 @@ export class User {
   @ManyToOne(() => Role, (role) => role.users)
   @JoinColumn({ name: 'role_id' })
   role: Role;
+
+  @ManyToOne(() => Company, (company) => company.users)
+  company: Company;
+
+  @OneToMany(() => Resume, (resume) => resume.user)
+  resumes: Resume[];
 }

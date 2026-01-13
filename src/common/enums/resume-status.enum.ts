@@ -1,0 +1,6 @@
+export enum ResumeStatus {
+  PENDING = 'PENDING',
+  REVIEWING = 'REVIEWING',
+  ACCEPTED = 'ACCEPTED',
+  REJECTED = 'REJECTED',
+}

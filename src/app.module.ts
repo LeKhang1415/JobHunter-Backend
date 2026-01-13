@@ -12,6 +12,9 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { JwtGuard } from './common/guards/jwt.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { PermissionGuard } from './common/guards/permission.guard';
+import { CompanyModule } from './modules/company/company.module';
+import { JobModule } from './modules/job/job.module';
+import { ResumeModule } from './modules/resume/resume.module';
 import jwtConfig from './config/jwt.config';
 
 @Module({
@@ -39,6 +42,9 @@ import jwtConfig from './config/jwt.config';
     RoleModule,
     PermissionsModule,
     AuthModule,
+    CompanyModule,
+    JobModule,
+    ResumeModule,
   ],
   controllers: [AppController],
   providers: [

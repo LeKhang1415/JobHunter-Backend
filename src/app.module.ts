@@ -15,6 +15,7 @@ import { PermissionGuard } from './common/guards/permission.guard';
 import { CompanyModule } from './modules/company/company.module';
 import { JobModule } from './modules/job/job.module';
 import { ResumeModule } from './modules/resume/resume.module';
+import { UploadModule } from './modules/upload/upload.module';
 import jwtConfig from './config/jwt.config';
 
 @Module({
@@ -45,6 +46,7 @@ import jwtConfig from './config/jwt.config';
     CompanyModule,
     JobModule,
     ResumeModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [

@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreatePermissionDto } from './dtos/create-permission.dto';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Permission } from './entities/permission.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UpdatePermissionDto } from './dtos/update-permission.dto';
@@ -68,6 +68,12 @@ export class PermissionsService {
     return {
       name: permission.name,
     };
+  }
+
+  async findAllById(permissionIds: string[]): Promise<Permission[]> {
+    return await this.permissionRepository.find({
+      where: { id: In(permissionIds) },
+    });
   }
 
   async findByName(name: string): Promise<Permission | null> {

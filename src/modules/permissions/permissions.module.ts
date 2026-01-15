@@ -9,5 +9,6 @@ import { Role } from '../role/entities/role.entity';
   imports: [TypeOrmModule.forFeature([Permission, Role])],
   providers: [PermissionsService],
   controllers: [PermissionsController],
+  exports: [PermissionsService],
 })
 export class PermissionsModule {}

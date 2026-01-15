@@ -24,8 +24,16 @@ export class RoleService {
   async create(createRoleDto: CreateRoleDto) {
     const { name, description, active, permissionIds } = createRoleDto;
 
+    const exists = await this.findByName(name);
+
+    if (exists) {
+      throw new BadRequestException('Role đã tồn tại');
+    }
+
+    const normalizedName = name.trim().toUpperCase();
+
     let role = this.roleRepository.create({
-      name,
+      name: normalizedName,
       description,
       active,
     });
@@ -57,11 +65,13 @@ export class RoleService {
     }
 
     if (name && role.name !== RoleEnum.ADMIN && role.name !== RoleEnum.USER) {
-      role.name = name;
+      role.name = name.trim().toUpperCase();
     }
 
     if (description) role.description = description;
-    if (active) role.active = active;
+    if (active !== undefined) {
+      role.active = active;
+    }
 
     if (permissionIds) {
       const requestedPermissions =
@@ -78,8 +88,10 @@ export class RoleService {
   }
 
   async findByName(name: string): Promise<Role | null> {
-    return await this.roleRepository.findOne({
-      where: { name },
+    const normalized = name.trim().toUpperCase();
+
+    return this.roleRepository.findOne({
+      where: { name: normalized },
       relations: ['permissions'],
     });
   }

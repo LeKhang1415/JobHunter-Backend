@@ -18,7 +18,7 @@ export class Company {
   @Column()
   name: string;
 
-  @Column({ type: 'mediumtext' })
+  @Column()
   description: string;
 
   @Column()

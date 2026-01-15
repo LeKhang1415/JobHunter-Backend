@@ -20,7 +20,7 @@ export class Job {
   @Column()
   location: string;
 
-  @Column('double')
+  @Column({ type: 'numeric', precision: 12, scale: 2 })
   salary: number;
 
   @Column()

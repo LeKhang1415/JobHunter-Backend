@@ -11,6 +11,9 @@ import { PermissionsService } from '../permissions/permissions.service';
 import { Permission } from '../permissions/entities/permission.entity';
 import { UpdateRoleDto } from './dtos/update-role.dto';
 import { RoleEnum } from 'src/common/enums/role.enum';
+import { PaginationQueryDto } from 'src/common/pagination/dtos/pagination-query.dto';
+import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
+import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
 
 @Injectable()
 export class RoleService {
@@ -19,6 +22,8 @@ export class RoleService {
     private readonly roleRepository: Repository<Role>,
 
     private readonly permissionsService: PermissionsService,
+
+    private readonly paginationProvider: PaginationProvider,
   ) {}
 
   async create(createRoleDto: CreateRoleDto) {
@@ -85,6 +90,13 @@ export class RoleService {
     }
 
     return await this.roleRepository.save(role);
+  }
+
+  async findAllRole(pagination: PaginationQueryDto): Promise<Paginated<Role>> {
+    return await this.paginationProvider.paginateQuery(
+      pagination,
+      this.roleRepository,
+    );
   }
 
   async findByName(name: string): Promise<Role | null> {

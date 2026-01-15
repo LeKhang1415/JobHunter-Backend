@@ -4,11 +4,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreatePermissionDto } from './dtos/create-permission.dto';
-import { In, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { Permission } from './entities/permission.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UpdatePermissionDto } from './dtos/update-permission.dto';
 import { Role } from '../role/entities/role.entity';
+import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
+import { PaginationQueryDto } from 'src/common/pagination/dtos/pagination-query.dto';
+import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
 
 @Injectable()
 export class PermissionsService {
@@ -16,8 +19,9 @@ export class PermissionsService {
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>,
 
-    @InjectRepository(Role)
-    private readonly roleRepository: Repository<Role>,
+    private readonly paginationProvider: PaginationProvider,
+
+    private readonly dataSource: DataSource,
   ) {}
   async create(createPermissionDto: CreatePermissionDto): Promise<Permission> {
     const existed = await this.findByName(createPermissionDto.name);
@@ -58,16 +62,39 @@ export class PermissionsService {
       throw new NotFoundException('Permission không tồn tại');
     }
 
-    for (const role of permission.roles) {
-      role.permissions = role.permissions.filter((p) => p.id != permission.id);
-      await this.roleRepository.save(role);
-    }
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        for (const role of permission.roles) {
+          role.permissions = role.permissions.filter(
+            (p) => p.id != permission.id,
+          );
+          await manager.getRepository(Role).save(role);
+        }
 
-    await this.permissionRepository.remove(permission);
+        await manager.getRepository(Permission).remove(permission);
+      });
+    } catch {
+      throw new BadRequestException('Xóa permission thất bại');
+    }
 
     return {
       name: permission.name,
     };
+  }
+
+  async findAllPermission(
+    pagination: PaginationQueryDto,
+  ): Promise<Paginated<Permission>> {
+    return await this.paginationProvider.paginateQuery(
+      pagination,
+      this.permissionRepository,
+    );
+  }
+
+  async findAllWithoutPagination(): Promise<Permission[]> {
+    return this.permissionRepository.find({
+      relations: ['roles'],
+    });
   }
 
   async findAllById(permissionIds: string[]): Promise<Permission[]> {

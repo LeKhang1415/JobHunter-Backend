@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { RegisterUser } from './dtos/register-user.dto';
@@ -52,18 +53,26 @@ export class AuthService {
       ? await this.roleService.findByName(RoleEnum.RECRUITER)
       : await this.roleService.findByName(RoleEnum.USER);
 
+    if (!role) {
+      throw new InternalServerErrorException(
+        `System role ${recruiter ? 'RECRUITER' : 'USER'} is missing. Database corrupted.`,
+      );
+    }
+
     newUser.role = role;
 
-    const permissions = await this.roleService.getPermissionByName(role.name);
+    const savedUser = await this.usersRepository.save(newUser);
+
+    const permissions = await this.roleService.getPermissionByName(
+      savedUser.role.name,
+    );
 
     const accessToken =
       await this.generateTokenProvider.generateTokenWithCookie(
-        newUser,
+        savedUser,
         permissions,
         response,
       );
-
-    const savedUser = await this.usersRepository.save(newUser);
 
     return {
       accessToken,

@@ -60,14 +60,7 @@ export class RoleService {
   async update(id: string, updateRoleDto: UpdateRoleDto) {
     const { name, description, active, permissionIds } = updateRoleDto;
 
-    const role = await this.roleRepository.findOne({
-      where: { id },
-      relations: ['permissions'],
-    });
-
-    if (!role) {
-      throw new NotFoundException('Chức vụ không tồn tại');
-    }
+    const role = await this.findById(id);
 
     if (name && role.name !== RoleEnum.ADMIN && role.name !== RoleEnum.USER) {
       role.name = name.trim().toUpperCase();
@@ -99,28 +92,36 @@ export class RoleService {
     );
   }
 
-  async findByName(name: string): Promise<Role | null> {
+  async findByName(name: string): Promise<Role> {
     const normalized = name.trim().toUpperCase();
 
-    return this.roleRepository.findOne({
+    const role = await this.roleRepository.findOne({
       where: { name: normalized },
       relations: ['permissions'],
     });
-  }
-
-  async findById(id: string): Promise<Role | null> {
-    return await this.roleRepository.findOne({
-      where: { id },
-      relations: ['permissions'],
-    });
-  }
-
-  async getPermissionByName(name: string): Promise<string[]> {
-    const role = await this.findByName(name);
 
     if (!role) {
       throw new NotFoundException(`Không tìm thấy role ${name}`);
     }
+
+    return role;
+  }
+
+  async findById(id: string): Promise<Role> {
+    const role = await this.roleRepository.findOne({
+      where: { id },
+      relations: ['permissions'],
+    });
+
+    if (!role) {
+      throw new NotFoundException('Không tìm thấy chức vụ');
+    }
+
+    return role;
+  }
+
+  async getPermissionByName(name: string): Promise<string[]> {
+    const role = await this.findByName(name);
 
     let permissions: string[] = [];
     role.permissions.forEach((permission) =>

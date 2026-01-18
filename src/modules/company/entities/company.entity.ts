@@ -12,8 +12,8 @@ import { Job } from 'src/modules/job/entities/job.entity';
 
 @Entity('companies')
 export class Company {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
   name: string;

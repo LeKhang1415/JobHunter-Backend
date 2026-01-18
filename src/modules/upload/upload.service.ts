@@ -45,9 +45,9 @@ export class UploadService {
     });
   }
 
-  deleteImage(publicId: string, folder: string): Promise<void> {
+  deleteByPublicId(publicId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      cloudinary.uploader.destroy(`${folder}/${publicId}`, (error) => {
+      cloudinary.uploader.destroy(publicId, (error) => {
         if (error) return reject(error);
         resolve();
       });

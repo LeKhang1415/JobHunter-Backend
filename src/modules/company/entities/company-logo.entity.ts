@@ -19,5 +19,8 @@ export class CompanyLogo {
   company: Company;
 
   @Column()
+  publicId: string;
+
+  @Column()
   logoUrl: string;
 }

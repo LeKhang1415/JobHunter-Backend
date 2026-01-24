@@ -40,8 +40,11 @@ export class User {
   @JoinColumn({ name: 'role_id' })
   role: Role;
 
-  @ManyToOne(() => Company, (company) => company.users)
-  company: Company;
+  @ManyToOne(() => Company, (company) => company.users, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  company: Company | null;
 
   @OneToMany(() => Resume, (resume) => resume.user)
   resumes: Resume[];

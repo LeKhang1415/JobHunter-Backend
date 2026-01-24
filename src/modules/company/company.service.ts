@@ -17,6 +17,7 @@ import { UpdateCompanyDto } from './dtos/update-company.dto';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
 import { PaginationQueryDto } from 'src/common/pagination/dtos/pagination-query.dto';
 import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
+import { RecruiterRequestDto } from './dtos/recruiter-request.dto';
 
 @Injectable()
 export class CompanyService {
@@ -176,6 +177,34 @@ export class CompanyService {
     return this.mapToResponseDto(existsUser.company);
   }
 
+  async addMemberToCompany(
+    recruiterRequestDto: RecruiterRequestDto,
+    user: JwtPayload,
+  ): Promise<void> {
+    const currentUser = await this.userRepository.findOne({
+      where: { email: user.email },
+      relations: ['company'],
+    });
+
+    if (!currentUser) throw new NotFoundException('Không tìm thấy người dùng');
+
+    if (!currentUser.company)
+      throw new NotFoundException('Người dùng không có công ty');
+
+    const recruiter = await this.userRepository.findOne({
+      where: { email: recruiterRequestDto.email },
+      relations: ['company'],
+    });
+
+    if (!recruiter)
+      throw new NotFoundException('Không tìm thấy người dùng cần thêm');
+
+    if (recruiter.company)
+      throw new ConflictException('Người dùng cần thêm đã có công ty');
+
+    recruiter.company = currentUser.company;
+    await this.userRepository.save(recruiter);
+  }
   async findById(id: string): Promise<Company> {
     const company = await this.companyRepository.findOne({
       where: { id },
@@ -187,6 +216,41 @@ export class CompanyService {
     }
 
     return company;
+  }
+
+  async removeMemberFromCompany(
+    recruiterRequestDto: RecruiterRequestDto,
+    user: JwtPayload,
+  ): Promise<void> {
+    const currentUser = await this.userRepository.findOne({
+      where: { email: user.email },
+      relations: ['company', 'company.owner'],
+    });
+
+    if (!currentUser) throw new NotFoundException('Không tìm thấy người dùng');
+
+    if (!currentUser.company)
+      throw new NotFoundException('Người dùng không có công ty');
+
+    if (currentUser.company.owner?.id !== currentUser.id)
+      throw new ConflictException('Không có quyền truy cập');
+
+    const recruiter = await this.userRepository.findOne({
+      where: { email: recruiterRequestDto.email },
+      relations: ['company'],
+    });
+
+    if (!recruiter)
+      throw new NotFoundException('Không tìm thấy người dùng cần loại bỏ');
+
+    if (!recruiter.company)
+      throw new NotFoundException('Người dùng cần loại bỏ không có công ty');
+
+    if (recruiter.company.id !== currentUser.company.id)
+      throw new ConflictException('Người dùng này thuộc công ty khác');
+
+    recruiter.company = null;
+    await this.userRepository.save(recruiter);
   }
 
   private mapToResponseDto(company: Company): CompanyResponseDto {

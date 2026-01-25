@@ -7,14 +7,20 @@ import {
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Role } from '../role/entities/role.entity';
-import { Company } from '../company/entities/company.entity';
 import { UploadService } from '../upload/upload.service';
 import { HashingProvider } from '../auth/providers/hashing.provider';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { RoleService } from '../role/role.service';
 import { CompanyService } from '../company/company.service';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import {
+  CompanyInformationDto,
+  RoleInformationDto,
+  UserResponseDto,
+} from './dtos/user-response.dto';
+import { PaginationQueryDto } from 'src/common/pagination/dtos/pagination-query.dto';
+import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
+import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
 
 @Injectable()
 export class UsersService {
@@ -30,9 +36,11 @@ export class UsersService {
     private readonly roleService: RoleService,
 
     private readonly companyService: CompanyService,
+
+    private readonly paginationProvider: PaginationProvider,
   ) {}
 
-  async createUser(createUserDto: CreateUserDto): Promise<User> {
+  async createUser(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     if (await this.existsByEmail(createUserDto.email)) {
       throw new BadRequestException('Email đã tồn tại');
     }
@@ -57,13 +65,15 @@ export class UsersService {
       await this.setCompany(user, createUserDto.company);
     }
 
-    return this.usersRepository.save(user);
+    const savedUser = await this.usersRepository.save(user);
+
+    return this.mapToResponseDto(savedUser);
   }
 
   async updateUser(
     userId: string,
     updateUserDto: UpdateUserDto,
-  ): Promise<User> {
+  ): Promise<UserResponseDto> {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
       relations: ['role', 'company'],
@@ -98,14 +108,15 @@ export class UsersService {
         updateUserDto.password,
       );
     }
+    const savedUser = await this.usersRepository.save(user);
 
-    return this.usersRepository.save(user);
+    return this.mapToResponseDto(savedUser);
   }
 
   async existsByEmail(email: string): Promise<boolean> {
     const existsUser = await this.usersRepository.findOne({
       where: { email },
-      relations: ['role'],
+      relations: ['role', 'company', 'company.companyLogo'],
     });
 
     if (existsUser) {
@@ -118,19 +129,27 @@ export class UsersService {
   async findByEmail(email: string): Promise<User | null> {
     return await this.usersRepository.findOne({
       where: { email },
-      relations: ['role', 'company'],
+      relations: ['role', 'company', 'companyLogo'],
     });
   }
 
-  private async setCompany(user: User, id: string) {
-    const company = await this.companyService.findById(id);
-    user.company = company;
+  async findAllUsers(
+    pagination: PaginationQueryDto,
+  ): Promise<Paginated<UserResponseDto>> {
+    const paginated = await this.paginationProvider.paginateQuery(
+      pagination,
+      this.usersRepository,
+      {},
+      {},
+      ['role', 'company', 'company.companyLogo'],
+    );
+
+    return {
+      data: paginated.data.map((user) => this.mapToResponseDto(user)),
+      meta: paginated.meta,
+    };
   }
 
-  private async setRole(user: User, id: string) {
-    const role = await this.roleService.findById(id);
-    user.role = role;
-  }
   async updateSelfAvatar(email: string, file: Express.Multer.File) {
     if (!file) return;
 
@@ -143,6 +162,55 @@ export class UsersService {
     const result = await this.uploadService.uploadImage(file, 'avatars');
 
     user.userImgUrl = result.secure_url;
-    await this.usersRepository.save(user);
+
+    const updatedUser = await this.usersRepository.save(user);
+
+    return this.mapToResponseDto(updatedUser);
+  }
+
+  private async setCompany(user: User, id: string) {
+    const company = await this.companyService.findById(id);
+    user.company = company;
+  }
+
+  private async setRole(user: User, id: string) {
+    const role = await this.roleService.findById(id);
+    user.role = role;
+  }
+
+  private mapToResponseDto(user: User): UserResponseDto {
+    let company: CompanyInformationDto | null = null;
+    if (user.company) {
+      company = {
+        id: user.company.id,
+        name: user.company.name,
+        address: user.company.address,
+        logoUrl: user.company.companyLogo
+          ? user.company.companyLogo.logoUrl
+          : '',
+      };
+    }
+
+    let role: RoleInformationDto | null = null;
+    if (user.role) {
+      role = {
+        id: user.role.id,
+        name: user.role.name,
+        description: user.role.description,
+      };
+    }
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      address: user.address,
+      gender: user.gender,
+      userImgUrl: user.userImgUrl,
+      company,
+      role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
   }
 }

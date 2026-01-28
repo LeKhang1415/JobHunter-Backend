@@ -15,10 +15,10 @@ export class Permission {
   id: string;
 
   @Column()
-  name: string; // USER_READ, USER_CREATE,...
+  name: string;
 
   @Column({ name: 'api_path' })
-  apiPath: string; // /users, /users/:id
+  apiPath: string;
 
   @Column({
     type: 'enum',
@@ -27,7 +27,7 @@ export class Permission {
   method: HttpMethod;
 
   @Column()
-  module: string; // USER, ROLE, PERMISSION
+  module: string;
 
   @ManyToMany(() => Role, (role) => role.permissions)
   roles: Role[];

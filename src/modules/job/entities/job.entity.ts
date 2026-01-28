@@ -1,12 +1,14 @@
 import { Level } from 'src/common/enums/level.enum';
 import { Company } from 'src/modules/company/entities/company.entity';
 import { Resume } from 'src/modules/resume/entities/resume.entity';
+import { Skill } from 'src/modules/skills/entities/skill.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
   OneToMany,
+  ManyToMany,
 } from 'typeorm';
 
 @Entity('jobs')
@@ -46,4 +48,7 @@ export class Job {
 
   @OneToMany(() => Resume, (resume) => resume.job)
   resumes: Resume[];
+
+  @ManyToMany(() => Skill, (skill) => skill.jobs)
+  skills: Skill;
 }

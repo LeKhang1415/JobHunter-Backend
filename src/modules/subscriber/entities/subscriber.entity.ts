@@ -3,8 +3,8 @@ import { Skill } from '../../skills/entities/skill.entity';
 
 @Entity('subscribers')
 export class Subscriber {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
   email: string;

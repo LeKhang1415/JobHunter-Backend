@@ -1,5 +1,5 @@
 import { Job } from 'src/modules/job/entities/job.entity';
-import { Subscriber } from 'src/modules/subscribers/entities/subscriber.entity';
+import { Subscriber } from 'src/modules/subscriber/entities/subscriber.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

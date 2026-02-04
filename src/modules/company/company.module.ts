@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { CompanyService } from './company.service';
 import { CompanyController } from './company.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -12,11 +12,12 @@ import { PaginationModule } from 'src/common/pagination/pagination.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Company, User, CompanyLogo]),
+    forwardRef(() => UsersModule),
     UploadModule,
-    UsersModule,
     PaginationModule,
   ],
   controllers: [CompanyController],
   providers: [CompanyService],
+  exports: [CompanyService],
 })
 export class CompanyModule {}

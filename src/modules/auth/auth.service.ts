@@ -130,7 +130,7 @@ export class AuthService {
     const refreshToken = request.cookies?.refreshToken;
 
     if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token not found');
+      throw new UnauthorizedException('Không tìm thấy RefreshToken');
     }
 
     const accessToken =

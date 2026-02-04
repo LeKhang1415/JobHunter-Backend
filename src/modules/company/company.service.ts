@@ -1,5 +1,7 @@
 import {
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -31,7 +33,8 @@ export class CompanyService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
 
-    private readonly userService: UsersService,
+    @Inject(forwardRef(() => UsersService))
+    private readonly usersService: UsersService,
 
     private readonly uploadService: UploadService,
 
@@ -53,7 +56,7 @@ export class CompanyService {
     const savedCompany = await this.companyRepository.save(company);
 
     if (isRecruiter) {
-      const existsUser = await this.userService.findByEmail(user.email);
+      const existsUser = await this.usersService.findByEmail(user.email);
 
       if (!existsUser) throw new NotFoundException('Không tìm thấy người dùng');
 
@@ -167,7 +170,7 @@ export class CompanyService {
   }
 
   async findSelfCompany(user: JwtPayload): Promise<CompanyResponseDto> {
-    const existsUser = await this.userService.findByEmail(user.email);
+    const existsUser = await this.usersService.findByEmail(user.email);
 
     if (!existsUser) throw new NotFoundException('Không tìm thấy người dùng');
 

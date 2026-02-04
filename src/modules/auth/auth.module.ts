@@ -45,5 +45,11 @@ import { RefreshTokenProvider } from './providers/refresh-token.provider';
     RefreshTokenProvider,
   ],
   controllers: [AuthController],
+  exports: [
+    {
+      provide: HashingProvider,
+      useClass: BcryptProvider,
+    },
+  ],
 })
 export class AuthModule {}

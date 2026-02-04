@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  forwardRef,
   Inject,
   Injectable,
   NotFoundException,
@@ -28,14 +29,15 @@ export class UsersService {
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
 
+    @Inject(forwardRef(() => CompanyService))
+    private readonly companyService: CompanyService,
+
     @Inject(HashingProvider)
     private readonly hashingProvider: HashingProvider,
 
     private readonly uploadService: UploadService,
 
     private readonly roleService: RoleService,
-
-    private readonly companyService: CompanyService,
 
     private readonly paginationProvider: PaginationProvider,
   ) {}
@@ -129,14 +131,14 @@ export class UsersService {
   async findByEmail(email: string): Promise<User | null> {
     return await this.usersRepository.findOne({
       where: { email },
-      relations: ['role', 'company', 'companyLogo'],
+      relations: ['role', 'company', 'company.companyLogo'],
     });
   }
 
   async findById(id: string): Promise<User | null> {
     return await this.usersRepository.findOne({
       where: { id },
-      relations: ['role', 'company', 'companyLogo'],
+      relations: ['role', 'company', 'company.companyLogo'],
     });
   }
 

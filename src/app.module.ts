@@ -10,7 +10,6 @@ import { AuthModule } from './modules/auth/auth.module';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { JwtGuard } from './common/guards/jwt.guard';
-import { JwtModule } from '@nestjs/jwt';
 import { PermissionGuard } from './common/guards/permission.guard';
 import { CompanyModule } from './modules/company/company.module';
 import { JobModule } from './modules/job/job.module';

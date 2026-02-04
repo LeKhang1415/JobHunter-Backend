@@ -133,6 +133,13 @@ export class UsersService {
     });
   }
 
+  async findById(id: string): Promise<User | null> {
+    return await this.usersRepository.findOne({
+      where: { id },
+      relations: ['role', 'company', 'companyLogo'],
+    });
+  }
+
   async findAllUsers(
     pagination: PaginationQueryDto,
   ): Promise<Paginated<UserResponseDto>> {

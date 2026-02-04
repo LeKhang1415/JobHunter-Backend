@@ -8,15 +8,15 @@ import {
 import { RegisterUser } from './dtos/register-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersService } from '../users/users.service';
-import { BcryptProvider } from './providers/bcrypt.provider';
 import { User } from '../users/entities/user.entity';
 import { Repository } from 'typeorm';
 import { RoleService } from '../role/role.service';
 import { RoleEnum } from 'src/common/enums/role.enum';
 import { GenerateTokenProvider } from './providers/generate-token.provider';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { LoginUser } from './dtos/login-user.dto';
 import { HashingProvider } from './providers/hashing.provider';
+import { RefreshTokenProvider } from './providers/refresh-token.provider';
 
 @Injectable()
 export class AuthService {
@@ -33,6 +33,8 @@ export class AuthService {
     @Inject(HashingProvider) private readonly hashingProvider: HashingProvider,
 
     private readonly generateTokenProvider: GenerateTokenProvider,
+
+    private readonly refreshTokenProvider: RefreshTokenProvider,
   ) {}
   async register(registerUser: RegisterUser, response: Response) {
     const { email, name, password, gender, address, recruiter } = registerUser;
@@ -122,5 +124,18 @@ export class AuthService {
 
   async logout(response: Response): Promise<void> {
     this.generateTokenProvider.clearRefreshTokenCookie(response);
+  }
+
+  async refresh(request: Request) {
+    const refreshToken = request.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token not found');
+    }
+
+    const accessToken =
+      await this.refreshTokenProvider.refreshAccessToken(refreshToken);
+
+    return { accessToken };
   }
 }

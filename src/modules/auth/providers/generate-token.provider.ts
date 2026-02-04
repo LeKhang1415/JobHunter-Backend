@@ -5,14 +5,12 @@ import jwtConfig from 'src/config/jwt.config';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { ConfigType } from '@nestjs/config';
 import { Response } from 'express';
-import { RoleService } from 'src/modules/role/role.service';
 
 @Injectable()
 export class GenerateTokenProvider {
   constructor(
     private readonly jwtService: JwtService,
 
-    // Inject JWTConfig
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
   ) {}
@@ -61,11 +59,9 @@ export class GenerateTokenProvider {
       path: '/',
     });
 
-    // Chỉ trả về accessToken, refreshToken được lưu trong cookie
     return accessToken;
   }
 
-  // Phương thức để clear refresh token cookie khi logout
   clearRefreshTokenCookie(response: Response): void {
     response.clearCookie('refreshToken', {
       httpOnly: true,

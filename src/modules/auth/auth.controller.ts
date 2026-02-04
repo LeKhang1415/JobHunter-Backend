@@ -1,10 +1,10 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Post, Req, Res } from '@nestjs/common';
 import { RegisterUser } from './dtos/register-user.dto';
 import { AuthService } from './auth.service';
 import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
-import { Response } from 'express';
 import { LoginUser } from './dtos/login-user.dto';
+import { Response, Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -28,6 +28,12 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     return this.authService.login(loginUser, response);
+  }
+
+  @Public()
+  @Post('refresh')
+  async refresh(@Req() request: Request) {
+    return this.authService.refresh(request);
   }
 
   @ResponseMessage('Đăng xuất thành công')

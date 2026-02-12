@@ -17,6 +17,7 @@ import { Request, Response } from 'express';
 import { LoginUser } from './dtos/login-user.dto';
 import { HashingProvider } from './providers/hashing.provider';
 import { RefreshTokenProvider } from './providers/refresh-token.provider';
+import { AuthResponseDto } from './dtos/auth-reponse.dto';
 
 @Injectable()
 export class AuthService {
@@ -76,15 +77,7 @@ export class AuthService {
         response,
       );
 
-    return {
-      accessToken,
-      user: {
-        id: savedUser.id,
-        email: savedUser.email,
-        name: savedUser.name,
-        role: savedUser.role.name,
-      },
-    };
+    return this.mapToResponseDto(accessToken, savedUser, permissions);
   }
 
   async login(loginUser: LoginUser, response: Response) {
@@ -111,15 +104,7 @@ export class AuthService {
         permissions,
         response,
       );
-    return {
-      accessToken,
-      user: {
-        id: existingUser.id,
-        email: existingUser.email,
-        name: existingUser.name,
-        role: existingUser.role.name,
-      },
-    };
+    return this.mapToResponseDto(accessToken, existingUser, permissions);
   }
 
   async logout(response: Response): Promise<void> {
@@ -137,5 +122,22 @@ export class AuthService {
       await this.refreshTokenProvider.refreshAccessToken(refreshToken);
 
     return { accessToken };
+  }
+
+  private mapToResponseDto(
+    accessToken: string,
+    user: User,
+    permissions: string[],
+  ): AuthResponseDto {
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role.name,
+        permissions,
+      },
+    };
   }
 }

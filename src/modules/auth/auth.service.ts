@@ -77,7 +77,7 @@ export class AuthService {
         response,
       );
 
-    return this.mapToResponseDto(accessToken, savedUser, permissions);
+    return this.mapToResponseDto(accessToken, savedUser);
   }
 
   async login(loginUser: LoginUser, response: Response) {
@@ -104,7 +104,7 @@ export class AuthService {
         permissions,
         response,
       );
-    return this.mapToResponseDto(accessToken, existingUser, permissions);
+    return this.mapToResponseDto(accessToken, existingUser);
   }
 
   async logout(response: Response): Promise<void> {
@@ -124,20 +124,10 @@ export class AuthService {
     return { accessToken };
   }
 
-  private mapToResponseDto(
-    accessToken: string,
-    user: User,
-    permissions: string[],
-  ): AuthResponseDto {
+  private mapToResponseDto(accessToken: string, user: User): AuthResponseDto {
     return {
       accessToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role.name,
-        permissions,
-      },
+      user: this.usersService.mapToResponseDto(user),
     };
   }
 }

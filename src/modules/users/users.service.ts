@@ -154,7 +154,9 @@ export class UsersService {
     );
 
     return {
-      data: paginated.data.map((user) => this.mapToResponseDto(user)),
+      data: await Promise.all(
+        paginated.data.map((user) => this.mapToResponseDto(user)),
+      ),
       meta: paginated.meta,
     };
   }
@@ -187,7 +189,12 @@ export class UsersService {
     user.role = role;
   }
 
-  private mapToResponseDto(user: User): UserResponseDto {
+  public async mapToResponseDto(user: User): Promise<UserResponseDto> {
+    let permissions: string[] = [];
+
+    if (user.role) {
+      permissions = await this.roleService.getPermissionByName(user.role.name);
+    }
     let company: CompanyInformationDto | null = null;
     if (user.company) {
       company = {
@@ -218,6 +225,7 @@ export class UsersService {
       userImgUrl: user.userImgUrl,
       company,
       role,
+      permissions,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

@@ -20,6 +20,7 @@ export class UserResponseDto {
   userImgUrl: string;
   company?: CompanyInformationDto | null;
   role?: RoleInformationDto | null;
+  permissions: string[];
   createdAt: Date;
   updatedAt: Date;
 }

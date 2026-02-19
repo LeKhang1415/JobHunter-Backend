@@ -1,10 +1,6 @@
+import { UserResponseDto } from 'src/modules/users/dtos/user-response.dto';
+
 export class AuthResponseDto {
   accessToken: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-    permissions: string[];
-  };
+  user: UserResponseDto;
 }

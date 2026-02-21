@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Skill } from './entities/skill.entity';
 import { CreateSkillDto } from './dtos/create-skill.dto';
 import { SkillResponseDto } from './dtos/skill-response.dto';
@@ -78,6 +78,14 @@ export class SkillsService {
     }
 
     return this.mapToResponseDto(skill);
+  }
+
+  async findAllById(skillIds: string[]): Promise<Skill[] | null> {
+    const skills = await this.skillRepository.find({
+      where: { id: In(skillIds) },
+    });
+
+    return skills;
   }
 
   async findAllSkills(

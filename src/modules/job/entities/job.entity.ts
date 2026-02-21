@@ -50,5 +50,5 @@ export class Job {
   resumes: Resume[];
 
   @ManyToMany(() => Skill, (skill) => skill.jobs)
-  skills: Skill;
+  skills: Skill[];
 }

@@ -11,8 +11,9 @@ import { CompanyService } from '../company/company.service';
 import { Job } from './entities/job.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Company } from '../company/entities/company.entity';
 import { JobResponseDto } from './dtos/job-response.dto';
+import { UploadService } from '../upload/upload.service';
+import { UpdateJobDto } from './dtos/update-job.dto';
 
 @Injectable()
 export class JobService {
@@ -22,6 +23,8 @@ export class JobService {
     private readonly skillsService: SkillsService,
 
     private readonly companyService: CompanyService,
+
+    private readonly uploadService: UploadService,
 
     @InjectRepository(Job)
     private readonly jobRepository: Repository<Job>,
@@ -82,6 +85,155 @@ export class JobService {
     const savedJob = await this.jobRepository.save(job);
 
     return this.mapToResponseDto(savedJob);
+  }
+
+  async update(
+    id: string,
+    updateJobDto: UpdateJobDto,
+    isRecruiter: boolean,
+    user: JwtPayload,
+  ): Promise<JobResponseDto> {
+    const job = await this.jobRepository.findOne({
+      where: { id },
+      relations: ['company', 'skills'],
+    });
+
+    if (!job) {
+      throw new NotFoundException('Không tìm thấy công việc');
+    }
+
+    const startDate = updateJobDto.startDate ?? job.startDate;
+    const endDate = updateJobDto.endDate ?? job.endDate;
+
+    if (new Date(startDate) >= new Date(endDate)) {
+      throw new BadRequestException('Ngày bắt đầu phải nhỏ hơn ngày kết thúc');
+    }
+
+    const { companyId, skillIds, ...jobUpdates } = updateJobDto;
+
+    Object.assign(job, jobUpdates);
+
+    if (isRecruiter) {
+      const existsUser = await this.usersService.findByEmail(user.email);
+
+      if (!existsUser) throw new NotFoundException('Không tìm thấy người dùng');
+      if (!existsUser.company)
+        throw new NotFoundException('Không thấy công ty');
+
+      if (existsUser.company.id !== job.company.id) {
+        throw new BadRequestException('Không có quyền chỉnh sửa');
+      }
+    }
+
+    if (!isRecruiter && companyId) {
+      const company = await this.companyService.findById(companyId);
+      if (!company) throw new NotFoundException('Công ty không tồn tại');
+      job.company = company;
+    }
+
+    if (skillIds) {
+      const skills = await this.skillsService.findAllById(skillIds);
+
+      if (skills?.length !== skillIds.length) {
+        throw new NotFoundException('Skill không tồn tại');
+      }
+
+      job.skills = skills;
+    }
+
+    const updated = await this.jobRepository.save(job);
+
+    return this.mapToResponseDto(updated);
+  }
+
+  async delete(id: string): Promise<JobResponseDto> {
+    const job = await this.jobRepository.findOne({
+      where: { id },
+      relations: ['skills', 'resumes'],
+    });
+
+    if (!job) {
+      throw new NotFoundException('Không tìm thấy công việc');
+    }
+
+    await this.cleanupJob(job);
+
+    await this.jobRepository.remove(job);
+
+    return this.mapToResponseDto(job);
+  }
+
+  async deleteForRecruiter(
+    id: string,
+    user: JwtPayload,
+  ): Promise<JobResponseDto> {
+    const existsUser = await this.usersService.findByEmail(user.email);
+
+    if (!existsUser) throw new NotFoundException('Không tìm thấy người dùng');
+
+    if (!existsUser.company) {
+      throw new NotFoundException('Không tìm thấy công ty');
+    }
+
+    const job = await this.jobRepository.findOne({
+      where: { id },
+      relations: ['company', 'skills', 'resumes'],
+    });
+
+    if (!job) {
+      throw new NotFoundException('Không tìm thấy công việc');
+    }
+
+    if (job.company.id !== existsUser.company.id) {
+      throw new BadRequestException('Không có quyền xóa');
+    }
+
+    await this.cleanupJob(job);
+
+    await this.jobRepository.remove(job);
+
+    return this.mapToResponseDto(job);
+  }
+
+  async findById(id: string): Promise<JobResponseDto> {
+    const job = await this.jobRepository.findOne({
+      where: { id },
+      relations: ['company', 'skills'],
+    });
+
+    if (!job) {
+      throw new NotFoundException('Không tìm thấy công việc');
+    }
+
+    return this.mapToResponseDto(job);
+  }
+
+  async findByCompanyId(companyId: string): Promise<JobResponseDto[]> {
+    const jobs = await this.jobRepository.find({
+      where: {
+        company: { id: companyId },
+      },
+      relations: ['company', 'skills'],
+    });
+
+    return jobs.map((job) => {
+      const dto = this.mapToResponseDto(job);
+      dto.description = null;
+      dto.company = null;
+      return dto;
+    });
+  }
+
+  private async cleanupJob(job: Job) {
+    job.skills = [];
+
+    if (job.resumes?.length) {
+      for (const resume of job.resumes) {
+        if (resume.publicId) {
+          await this.uploadService.deletePDF(resume.publicId, 'resumes');
+        }
+      }
+    }
   }
 
   private mapToResponseDto(job: Job): JobResponseDto {

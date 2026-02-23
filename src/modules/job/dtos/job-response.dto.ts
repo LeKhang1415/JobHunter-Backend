@@ -5,7 +5,7 @@ export class JobResponseDto {
   salary: number;
   quantity: number;
   level: string;
-  description: string;
+  description: string | null;
   startDate: string;
   endDate: string;
   active: boolean;

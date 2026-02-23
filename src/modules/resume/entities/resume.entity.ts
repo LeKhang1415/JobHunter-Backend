@@ -13,7 +13,10 @@ export class Resume {
   email: string;
 
   @Column()
-  fileKey: string;
+  fileUrl: string;
+
+  @Column()
+  publicId: string;
 
   @Column({ type: 'enum', enum: ResumeStatus })
   status: ResumeStatus;
@@ -23,7 +26,4 @@ export class Resume {
 
   @ManyToOne(() => Job, (job) => job.resumes)
   job: Job;
-
-  @Column()
-  version: number;
 }

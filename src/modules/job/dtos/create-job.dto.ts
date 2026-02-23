@@ -43,6 +43,6 @@ export class CreateJobDto {
   companyId?: string;
 
   @IsArray()
-  @IsUUID()
+  @IsUUID(undefined, { each: true })
   skillIds: string[];
 }

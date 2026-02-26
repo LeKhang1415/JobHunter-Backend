@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsNotEmpty } from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum, IsNotEmpty } from 'class-validator';
 import { Gender } from 'src/common/enums/users-gender.enum';
 
 export class RegisterUser {
@@ -15,7 +15,9 @@ export class RegisterUser {
   @IsEnum(Gender)
   gender: Gender;
 
+  @IsNotEmpty({ message: 'Địa chỉ người dùng không được để trống' })
   address: string;
 
+  @IsBoolean()
   recruiter: boolean;
 }

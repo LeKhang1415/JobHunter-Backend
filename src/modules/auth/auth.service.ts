@@ -124,10 +124,13 @@ export class AuthService {
     return { accessToken };
   }
 
-  private mapToResponseDto(accessToken: string, user: User): AuthResponseDto {
+  private async mapToResponseDto(
+    accessToken: string,
+    user: User,
+  ): Promise<AuthResponseDto> {
     return {
       accessToken,
-      user: this.usersService.mapToResponseDto(user),
+      user: await this.usersService.mapToResponseDto(user),
     };
   }
 }

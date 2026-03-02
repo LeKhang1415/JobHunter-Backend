@@ -138,7 +138,7 @@ export class UsersService {
   async findById(id: string): Promise<User | null> {
     return await this.usersRepository.findOne({
       where: { id },
-      relations: ['role', 'company', 'company.companyLogo'],
+      relations: ['role', 'company', 'company.companyLogo', 'role.permissions'],
     });
   }
 

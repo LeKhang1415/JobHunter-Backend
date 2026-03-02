@@ -5,6 +5,8 @@ import {
   OneToMany,
   OneToOne,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { User } from 'src/modules/users/entities/user.entity';
 import { CompanyLogo } from './company-logo.entity';
@@ -36,4 +38,10 @@ export class Company {
   @OneToOne(() => User)
   @JoinColumn({ name: 'owner_id' })
   owner: User;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

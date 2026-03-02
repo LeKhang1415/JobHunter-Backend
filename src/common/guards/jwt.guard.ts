@@ -36,11 +36,15 @@ export class JwtGuard implements CanActivate {
       throw new UnauthorizedException('Token không hợp lệ');
     }
 
+    console.log('RAW TOKEN FROM HEADER:', token);
+
     try {
       const payload = await this.jwtService.verifyAsync<JwtPayload>(
         token,
         this.jwtConfiguration,
       );
+
+      console.log('test', payload);
 
       request['user'] = payload as JwtPayload;
 

@@ -3,11 +3,7 @@ export class CompanyResponseDto {
   name: string;
   description?: string;
   address?: string;
-
   logoUrl: string | null;
-
-  owner: {
-    id: string;
-    email: string;
-  } | null;
+  createdAt: string;
+  updatedAt: string;
 }

@@ -265,12 +265,8 @@ export class CompanyService {
 
       logoUrl: company.companyLogo ? company.companyLogo.logoUrl : null,
 
-      owner: company.owner
-        ? {
-            id: company.owner.id,
-            email: company.owner.email,
-          }
-        : null,
+      createdAt: company.createdAt.toISOString(),
+      updatedAt: company.updatedAt.toISOString(),
     };
   }
 }

@@ -29,9 +29,6 @@ export class Company {
   @OneToOne(() => CompanyLogo, (logo) => logo.company, { cascade: true })
   companyLogo: CompanyLogo;
 
-  @OneToMany(() => User, (user) => user.company)
-  users: User[];
-
   @OneToMany(() => Job, (job) => job.company, { cascade: true })
   jobs: Job[];
 

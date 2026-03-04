@@ -28,35 +28,34 @@ export class RoleService {
 
   async create(createRoleDto: CreateRoleDto) {
     const { name, description, active, permissionIds } = createRoleDto;
+    const normalizedName = name.trim().toUpperCase();
 
-    const exists = await this.findByName(name);
+    const exists = await this.roleRepository.findOne({
+      where: { name: normalizedName },
+    });
 
     if (exists) {
       throw new BadRequestException('Role đã tồn tại');
     }
 
-    const normalizedName = name.trim().toUpperCase();
-
-    let role = this.roleRepository.create({
+    const newRole = this.roleRepository.create({
       name: normalizedName,
       description,
       active,
     });
-    let permissions: Permission[] = [];
 
-    if (permissionIds && permissionIds.length !== 0) {
-      permissions = await this.permissionsService.findAllById(permissionIds);
+    if (permissionIds && permissionIds.length > 0) {
+      const permissions =
+        await this.permissionsService.findAllById(permissionIds);
 
       if (permissions.length !== permissionIds.length) {
         throw new BadRequestException('Có permission không tồn tại');
       }
+      newRole.permissions = permissions;
     }
 
-    role.permissions = permissions;
-
-    return await this.roleRepository.save(role);
+    return await this.roleRepository.save(newRole);
   }
-
   async update(id: string, updateRoleDto: UpdateRoleDto) {
     const { name, description, active, permissionIds } = updateRoleDto;
 
@@ -94,7 +93,6 @@ export class RoleService {
 
   async findByName(name: string): Promise<Role> {
     const normalized = name.trim().toUpperCase();
-
     const role = await this.roleRepository.findOne({
       where: { name: normalized },
       relations: ['permissions'],
@@ -103,7 +101,6 @@ export class RoleService {
     if (!role) {
       throw new NotFoundException(`Không tìm thấy role ${name}`);
     }
-
     return role;
   }
 

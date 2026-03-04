@@ -38,11 +38,11 @@ export class User {
   @Exclude()
   password: string;
 
-  @ManyToOne(() => Role, (role) => role.users)
+  @ManyToOne(() => Role)
   @JoinColumn({ name: 'role_id' })
   role: Role;
 
-  @ManyToOne(() => Company, (company) => company.users, {
+  @ManyToOne(() => Company, {
     nullable: true,
     onDelete: 'SET NULL',
   })

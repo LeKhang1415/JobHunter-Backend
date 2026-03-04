@@ -63,10 +63,13 @@ export class CompanyService {
       if (existsUser.company)
         throw new ConflictException('Người dùng đã có công ty');
 
-      existsUser.company = savedCompany;
-      await this.userRepository.save(existsUser);
+      await this.userRepository.update(existsUser.id, {
+        company: { id: savedCompany.id },
+      });
 
-      savedCompany.owner = existsUser;
+      await this.companyRepository.update(savedCompany.id, {
+        owner: { id: existsUser.id },
+      });
     }
 
     if (logoFile) {

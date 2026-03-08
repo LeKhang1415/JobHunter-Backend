@@ -29,6 +29,6 @@ export class Permission {
   @Column()
   module: string;
 
-  @ManyToMany(() => Role)
+  @ManyToMany(() => Role, (role) => role.permissions)
   roles: Role[];
 }

@@ -22,7 +22,7 @@ export class Role {
   @Column({ nullable: false })
   active: boolean;
 
-  @ManyToMany(() => Permission)
+  @ManyToMany(() => Permission, (permission) => permission.roles)
   @JoinTable({
     name: 'roles_permissions',
     joinColumn: { name: 'role_id', referencedColumnName: 'id' },

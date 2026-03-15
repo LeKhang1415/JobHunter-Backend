@@ -84,7 +84,7 @@ export class CompanyController {
   }
 
   @RequirePermissions('GET /company/me/recruiters')
-  @ResponseMessage('Lấy danh sách recruiter của công ty')
+  @ResponseMessage('Lấy danh sách recruiter của công ty thành công')
   @Get('me/recruiters')
   findSelfRecruiters(@CurrentUser() user: JwtPayload) {
     return this.companyService.findAllRecruitersBySelfCompany(user);

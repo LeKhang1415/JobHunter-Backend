@@ -20,6 +20,7 @@ import { PaginationProvider } from 'src/common/pagination/providers/pagination.p
 import { PaginationQueryDto } from 'src/common/pagination/dtos/pagination-query.dto';
 import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
 import { RecruiterRequestDto } from './dtos/recruiter-request.dto';
+import { RecruiterInfoResponseDto } from './dtos/recruiter-info-response.dto';
 
 @Injectable()
 export class CompanyService {
@@ -181,6 +182,32 @@ export class CompanyService {
       throw new NotFoundException('Không tìm thấy công ty người dùng');
 
     return this.mapToResponseDto(existsUser.company);
+  }
+
+  async findAllRecruitersBySelfCompany(
+    user: JwtPayload,
+  ): Promise<RecruiterInfoResponseDto[]> {
+    const currentUser = await this.usersService.findByEmail(user.email);
+
+    if (!currentUser) throw new NotFoundException('Không tìm thấy người dùng');
+
+    if (!currentUser.company)
+      throw new NotFoundException('Người dùng không có công ty');
+
+    const company = currentUser.company;
+
+    const recruiters = await this.userRepository.find({
+      where: {
+        company: { id: company.id },
+      },
+    });
+
+    return recruiters.map((recruiter) => ({
+      id: recruiter.id,
+      name: recruiter.name,
+      email: recruiter.email,
+      owner: recruiter.id === company.owner?.id,
+    }));
   }
 
   async addMemberToCompany(

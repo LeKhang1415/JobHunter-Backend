@@ -76,18 +76,18 @@ export class CompanyController {
     return this.companyService.findAllCompanies(pagination);
   }
 
-  @RequirePermissions('GET /company/:id')
-  @ResponseMessage('Lấy thông tin công ty thành công')
-  @Get(':id')
-  findCompanyById(@Param('id') id: string) {
-    return this.companyService.findCompanyById(id);
-  }
-
   @RequirePermissions('GET /company/me/company')
   @ResponseMessage('Lấy công ty của người dùng thành công')
   @Get('me/company')
   findSelfCompany(@CurrentUser() user: JwtPayload) {
     return this.companyService.findSelfCompany(user);
+  }
+
+  @RequirePermissions('GET /company/me/recruiters')
+  @ResponseMessage('Lấy danh sách recruiter của công ty')
+  @Get('me/recruiters')
+  findSelfRecruiters(@CurrentUser() user: JwtPayload) {
+    return this.companyService.findAllRecruitersBySelfCompany(user);
   }
 
   @RequirePermissions('POST /company/members')
@@ -105,5 +105,12 @@ export class CompanyController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.companyService.removeMemberFromCompany(dto, user);
+  }
+
+  @RequirePermissions('GET /company/:id')
+  @ResponseMessage('Lấy thông tin công ty thành công')
+  @Get(':id')
+  findCompanyById(@Param('id') id: string) {
+    return this.companyService.findCompanyById(id);
   }
 }

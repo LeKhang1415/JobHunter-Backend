@@ -9,9 +9,9 @@ import { Skill } from './entities/skill.entity';
 import { CreateSkillDto } from './dtos/create-skill.dto';
 import { SkillResponseDto } from './dtos/skill-response.dto';
 import { UpdateSkillDto } from './dtos/update-skill.dto';
-import { PaginationQueryDto } from 'src/common/pagination/dtos/pagination-query.dto';
 import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
+import { SkillPaginationQueryDto } from './dtos/skill-pagination-query.dto';
 
 @Injectable()
 export class SkillsService {
@@ -89,11 +89,21 @@ export class SkillsService {
   }
 
   async findAllSkills(
-    pagination: PaginationQueryDto,
+    pagination: SkillPaginationQueryDto,
   ): Promise<Paginated<SkillResponseDto>> {
-    const paginated = await this.paginationProvider.paginateQuery(
+    const { searchName } = pagination;
+
+    const queryBuilder = this.skillRepository.createQueryBuilder('skill');
+
+    if (searchName) {
+      queryBuilder.andWhere('skill.name LIKE :searchName', {
+        searchName: `%${searchName}%`,
+      });
+    }
+
+    const paginated = await this.paginationProvider.paginateQueryBuilder(
       pagination,
-      this.skillRepository,
+      queryBuilder,
     );
 
     return {

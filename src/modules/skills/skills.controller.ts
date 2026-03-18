@@ -15,6 +15,7 @@ import { PaginationQueryDto } from 'src/common/pagination/dtos/pagination-query.
 import { SkillsService } from './skills.service';
 import { CreateSkillDto } from './dtos/create-skill.dto';
 import { UpdateSkillDto } from './dtos/update-skill.dto';
+import { SkillPaginationQueryDto } from './dtos/skill-pagination-query.dto';
 
 @Controller('skills')
 export class SkillsController {
@@ -23,7 +24,7 @@ export class SkillsController {
   @RequirePermissions('GET /skills')
   @ResponseMessage('Lấy danh sách kỹ năng thành công')
   @Get()
-  findAll(@Query() pagination: PaginationQueryDto) {
+  findAll(@Query() pagination: SkillPaginationQueryDto) {
     return this.skillsService.findAllSkills(pagination);
   }
 
@@ -41,6 +42,7 @@ export class SkillsController {
     return this.skillsService.create(createSkillDto);
   }
 
+  @RequirePermissions('PATCH /skills/:id')
   @ResponseMessage('Cập nhật kỹ năng thành công')
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateSkillDto: UpdateSkillDto) {

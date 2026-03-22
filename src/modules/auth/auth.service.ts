@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -66,6 +67,10 @@ export class AuthService {
 
     const savedUser = await this.usersRepository.save(newUser);
 
+    if (!savedUser.role) {
+      throw new ForbiddenException('User chưa có role');
+    }
+
     const permissions = await this.roleService.getPermissionByName(
       savedUser.role.name,
     );
@@ -94,6 +99,11 @@ export class AuthService {
     if (!isEqual) {
       throw new UnauthorizedException('Email hoặc mật khẩu không chính xác');
     }
+
+    if (!existingUser.role) {
+      throw new ForbiddenException('User chưa có role');
+    }
+
     const permissions = await this.roleService.getPermissionByName(
       existingUser.role.name,
     );

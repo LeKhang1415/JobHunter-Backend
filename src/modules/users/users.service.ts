@@ -37,6 +37,7 @@ export class UsersService {
 
     private readonly uploadService: UploadService,
 
+    @Inject(forwardRef(() => RoleService))
     private readonly roleService: RoleService,
 
     private readonly paginationProvider: PaginationProvider,
@@ -177,6 +178,15 @@ export class UsersService {
     const updatedUser = await this.usersRepository.save(user);
 
     return this.mapToResponseDto(updatedUser);
+  }
+
+  async detachUsersFromRole(roleId: string): Promise<void> {
+    await this.usersRepository
+      .createQueryBuilder()
+      .update()
+      .set({ role: null })
+      .where('roleId = :roleId', { roleId })
+      .execute();
   }
 
   private async setCompany(user: User, id: string) {

@@ -18,6 +18,12 @@ import { PaginationQueryDto } from 'src/common/pagination/dtos/pagination-query.
 export class RoleController {
   constructor(private readonly roleService: RoleService) {}
 
+  @ResponseMessage('Lấy quyền theo chức vụ thành công')
+  @Get(':id')
+  getPermissionsByRole(@Param('id') id: string) {
+    return this.roleService.getPermissionById(id);
+  }
+
   @ResponseMessage('Lấy danh sách chức vụ thành công')
   @Get()
   findAll(@Query() pagination: PaginationQueryDto) {
@@ -36,9 +42,9 @@ export class RoleController {
     return this.roleService.update(id, updateRoleDto);
   }
 
-  //   @ResponseMessage('Xóa chức vụ thành công')
-  //   @Delete(':id')
-  //   delete(@Param('id') id: string) {
-  //     return this.roleService.delete(id);
-  //   }
+  @ResponseMessage('Xóa chức vụ thành công')
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.roleService.delete(id);
+  }
 }

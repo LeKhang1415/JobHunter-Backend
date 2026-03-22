@@ -1,4 +1,9 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigType } from '@nestjs/config';
 import jwtConfig from 'src/config/jwt.config';
@@ -24,6 +29,10 @@ export class RefreshTokenProvider {
 
       if (!user) {
         throw new UnauthorizedException('Người dùng không tồn tại');
+      }
+
+      if (!user.role) {
+        throw new ForbiddenException('User chưa có role');
       }
 
       const permissions = user.role.permissions.map(

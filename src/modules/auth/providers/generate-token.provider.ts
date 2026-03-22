@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from 'src/modules/users/entities/user.entity';
 import jwtConfig from 'src/config/jwt.config';
@@ -37,6 +37,10 @@ export class GenerateTokenProvider {
     permissions: string[],
     response: Response,
   ): Promise<string> {
+    if (!user.role) {
+      throw new ForbiddenException('User chưa có role');
+    }
+
     const [accessToken, refreshToken] = await Promise.all([
       this.signToken<Partial<JwtPayload>>(
         user.id,

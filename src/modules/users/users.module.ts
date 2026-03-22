@@ -15,7 +15,7 @@ import { PaginationModule } from 'src/common/pagination/pagination.module';
     forwardRef(() => AuthModule),
     forwardRef(() => CompanyModule),
     UploadModule,
-    RoleModule,
+    forwardRef(() => RoleModule),
     PaginationModule,
   ],
   providers: [UsersService],

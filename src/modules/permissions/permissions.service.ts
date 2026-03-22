@@ -12,6 +12,7 @@ import { Role } from '../role/entities/role.entity';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
 import { PaginationQueryDto } from 'src/common/pagination/dtos/pagination-query.dto';
 import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
+import { PermissionResponseDto } from './dtos/permission-response.dto';
 
 @Injectable()
 export class PermissionsService {
@@ -23,19 +24,23 @@ export class PermissionsService {
 
     private readonly dataSource: DataSource,
   ) {}
-  async create(createPermissionDto: CreatePermissionDto): Promise<Permission> {
+  async create(
+    createPermissionDto: CreatePermissionDto,
+  ): Promise<PermissionResponseDto> {
     const existed = await this.findByName(createPermissionDto.name);
     if (existed) {
       throw new BadRequestException('Permission đã tồn tại');
     }
     const permission = this.permissionRepository.create(createPermissionDto);
-    return this.permissionRepository.save(permission);
+    const saved = await this.permissionRepository.save(permission);
+
+    return this.mapToPermissionResponseDto(saved);
   }
 
   async update(
     id: string,
     updatePermissionDto: UpdatePermissionDto,
-  ): Promise<Permission> {
+  ): Promise<PermissionResponseDto> {
     const permission = await this.findById(id);
 
     if (!permission) {
@@ -52,10 +57,12 @@ export class PermissionsService {
     }
 
     Object.assign(permission, updatePermissionDto);
-    return this.permissionRepository.save(permission);
+    const updated = await this.permissionRepository.save(permission);
+
+    return this.mapToPermissionResponseDto(updated);
   }
 
-  async delete(id: string) {
+  async delete(id: string): Promise<{ name: string }> {
     const permission = await this.findById(id);
 
     if (!permission) {
@@ -66,7 +73,7 @@ export class PermissionsService {
       await this.dataSource.transaction(async (manager) => {
         for (const role of permission.roles) {
           role.permissions = role.permissions.filter(
-            (p) => p.id != permission.id,
+            (p) => p.id !== permission.id,
           );
           await manager.getRepository(Role).save(role);
         }
@@ -84,17 +91,26 @@ export class PermissionsService {
 
   async findAllPermission(
     pagination: PaginationQueryDto,
-  ): Promise<Paginated<Permission>> {
-    return await this.paginationProvider.paginateQuery(
+  ): Promise<Paginated<PermissionResponseDto>> {
+    const paginated = await this.paginationProvider.paginateQuery(
       pagination,
       this.permissionRepository,
     );
+
+    return {
+      data: paginated.data.map((permission) =>
+        this.mapToPermissionResponseDto(permission),
+      ),
+      meta: paginated.meta,
+    };
   }
 
-  async findAllWithoutPagination(): Promise<Permission[]> {
-    return this.permissionRepository.find({
+  async findAllWithoutPagination(): Promise<PermissionResponseDto[]> {
+    const permissions = await this.permissionRepository.find({
       relations: ['roles'],
     });
+
+    return permissions.map((p) => this.mapToPermissionResponseDto(p));
   }
 
   async findAllById(permissionIds: string[]): Promise<Permission[]> {
@@ -115,5 +131,19 @@ export class PermissionsService {
       where: { id },
       relations: ['roles'],
     });
+  }
+
+  private mapToPermissionResponseDto(
+    permission: Permission,
+  ): PermissionResponseDto {
+    return {
+      id: permission.id,
+      name: permission.name,
+      apiPath: permission.apiPath,
+      method: permission.method,
+      module: permission.module,
+      createdAt: permission.createdAt.toISOString(),
+      updatedAt: permission.updatedAt.toISOString(),
+    };
   }
 }

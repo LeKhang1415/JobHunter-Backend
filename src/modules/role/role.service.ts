@@ -17,7 +17,7 @@ import { RoleEnum } from 'src/common/enums/role.enum';
 import { PaginationQueryDto } from 'src/common/pagination/dtos/pagination-query.dto';
 import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
-import { RoleResponseDto } from './dtos/role-response';
+import { RoleResponseDto } from './dtos/role-response.dto';
 import { UsersService } from '../users/users.service';
 
 @Injectable()

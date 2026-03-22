@@ -4,6 +4,8 @@ import {
   Column,
   ManyToMany,
   Unique,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { HttpMethod } from '../enums/http-method.permission';
 import { Role } from 'src/modules/role/entities/role.entity';
@@ -31,4 +33,10 @@ export class Permission {
 
   @ManyToMany(() => Role, (role) => role.permissions)
   roles: Role[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

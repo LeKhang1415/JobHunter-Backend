@@ -9,6 +9,7 @@ import {
   ManyToOne,
   OneToMany,
   ManyToMany,
+  JoinTable,
 } from 'typeorm';
 
 @Entity('jobs')
@@ -50,5 +51,9 @@ export class Job {
   resumes: Resume[];
 
   @ManyToMany(() => Skill, (skill) => skill.jobs)
+  @ManyToMany(() => Job, (job) => job.skills)
+  @JoinTable({
+    name: 'jobs-skills',
+  })
   skills: Skill[];
 }

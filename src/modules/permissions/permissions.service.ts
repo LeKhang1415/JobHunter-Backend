@@ -27,6 +27,15 @@ export class PermissionsService {
   async create(
     createPermissionDto: CreatePermissionDto,
   ): Promise<PermissionResponseDto> {
+    const existing = await this.permissionRepository.findOne({
+      where: {
+        apiPath: createPermissionDto.apiPath,
+        method: createPermissionDto.method,
+      },
+    });
+    if (existing) {
+      throw new BadRequestException('Permission đã tồn tại');
+    }
     const existed = await this.findByName(createPermissionDto.name);
     if (existed) {
       throw new BadRequestException('Permission đã tồn tại');

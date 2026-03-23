@@ -7,6 +7,7 @@ import {
   ManyToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  JoinTable,
 } from 'typeorm';
 
 @Entity('skills')
@@ -21,6 +22,9 @@ export class Skill {
   jobs: Job[];
 
   @ManyToMany(() => Subscriber, (subscriber) => subscriber.skills)
+  @JoinTable({
+    name: 'skill_subscribers',
+  })
   subscribers: Subscriber[];
 
   @CreateDateColumn()

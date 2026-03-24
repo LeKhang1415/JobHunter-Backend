@@ -23,8 +23,9 @@ export class SkillsService {
   ) {}
 
   async create(createSkillDto: CreateSkillDto): Promise<SkillResponseDto> {
+    const normalizedName = this.normalizeName(createSkillDto.name);
     const exists = await this.skillRepository.exists({
-      where: { name: createSkillDto.name },
+      where: { name: normalizedName },
     });
 
     if (exists) {
@@ -32,7 +33,7 @@ export class SkillsService {
     }
 
     const skill = this.skillRepository.create({
-      name: createSkillDto.name,
+      name: normalizedName,
     });
 
     const savedSkill = await this.skillRepository.save(skill);
@@ -44,16 +45,18 @@ export class SkillsService {
     updateSkillDto: UpdateSkillDto,
   ): Promise<SkillResponseDto> {
     const skill = await this.skillRepository.findOne({
-      where: { id: id },
+      where: { id },
     });
 
     if (!skill) {
       throw new NotFoundException('Không tìm thấy kỹ năng');
     }
 
+    const normalizedName = this.normalizeName(updateSkillDto.name);
+
     const exists = await this.skillRepository
       .createQueryBuilder('skill')
-      .where('skill.name = :name', { name: updateSkillDto.name })
+      .where('skill.name = :name', { name: normalizedName })
       .andWhere('skill.id != :id', { id })
       .getExists();
 
@@ -61,7 +64,7 @@ export class SkillsService {
       throw new ConflictException('Kỹ năng này đã tồn tại');
     }
 
-    skill.name = updateSkillDto.name;
+    skill.name = normalizedName;
 
     const savedSkill = await this.skillRepository.save(skill);
 
@@ -96,9 +99,13 @@ export class SkillsService {
     const queryBuilder = this.skillRepository.createQueryBuilder('skill');
 
     if (searchName) {
-      queryBuilder.andWhere('skill.name LIKE :searchName', {
-        searchName: `%${searchName}%`,
-      });
+      if (searchName) {
+        const normalizedSearch = this.normalizeName(searchName);
+
+        queryBuilder.andWhere('skill.name LIKE :searchName', {
+          searchName: `%${normalizedSearch}%`,
+        });
+      }
     }
 
     const paginated = await this.paginationProvider.paginateQueryBuilder(
@@ -129,6 +136,10 @@ export class SkillsService {
 
     await this.skillRepository.remove(skill);
     return this.mapToResponseDto(skill);
+  }
+
+  private normalizeName(name: string): string {
+    return name.trim().toLowerCase().replace(/\s+/g, '-').replace(/-+/g, '-');
   }
 
   private mapToResponseDto(skill: Skill): SkillResponseDto {

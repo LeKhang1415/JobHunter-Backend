@@ -4,15 +4,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreatePermissionDto } from './dtos/create-permission.dto';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, FindOptionsWhere, In, Like, Repository } from 'typeorm';
 import { Permission } from './entities/permission.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UpdatePermissionDto } from './dtos/update-permission.dto';
 import { Role } from '../role/entities/role.entity';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
-import { PaginationQueryDto } from 'src/common/pagination/dtos/pagination-query.dto';
 import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
 import { PermissionResponseDto } from './dtos/permission-response.dto';
+import { PermissionPaginationQueryDto } from './dtos/permission-pagination-query.dto';
 
 @Injectable()
 export class PermissionsService {
@@ -99,17 +99,28 @@ export class PermissionsService {
   }
 
   async findAllPermission(
-    pagination: PaginationQueryDto,
+    permissionPagination: PermissionPaginationQueryDto,
   ): Promise<Paginated<PermissionResponseDto>> {
+    const { name, apiPath, ...pagination } = permissionPagination;
+
+    const where: FindOptionsWhere<Permission> = {};
+
+    if (name) {
+      where.name = Like(`%${name}%`);
+    }
+
+    if (apiPath) {
+      where.apiPath = Like(`%${apiPath}%`);
+    }
+
     const paginated = await this.paginationProvider.paginateQuery(
       pagination,
       this.permissionRepository,
+      where,
     );
 
     return {
-      data: paginated.data.map((permission) =>
-        this.mapToPermissionResponseDto(permission),
-      ),
+      data: paginated.data.map((p) => this.mapToPermissionResponseDto(p)),
       meta: paginated.meta,
     };
   }

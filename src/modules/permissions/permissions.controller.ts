@@ -14,6 +14,7 @@ import { PermissionsService } from './permissions.service';
 import { UpdatePermissionDto } from './dtos/update-permission.dto';
 import { PaginationQueryDto } from 'src/common/pagination/dtos/pagination-query.dto';
 import { RequirePermissions } from 'src/common/decorators/permission.decorator';
+import { PermissionPaginationQueryDto } from './dtos/permission-pagination-query.dto';
 
 @Controller('permissions')
 export class PermissionsController {
@@ -22,7 +23,7 @@ export class PermissionsController {
   @RequirePermissions('GET /permissions')
   @ResponseMessage('Lấy danh sách quyền hạn thành công')
   @Get()
-  findAll(@Query() pagination: PaginationQueryDto) {
+  findAll(@Query() pagination: PermissionPaginationQueryDto) {
     return this.permissionsService.findAllPermission(pagination);
   }
 

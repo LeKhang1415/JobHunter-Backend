@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Role } from './entities/role.entity';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Like, Repository } from 'typeorm';
 import { CreateRoleDto } from './dtos/create-role.dto';
 import { PermissionsService } from '../permissions/permissions.service';
 
@@ -19,6 +19,7 @@ import { Paginated } from 'src/common/pagination/interfaces/paginated.interface'
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
 import { RoleResponseDto } from './dtos/role-response.dto';
 import { UsersService } from '../users/users.service';
+import { RolePaginationQueryDto } from './dtos/role-pagination-query.dto';
 
 @Injectable()
 export class RoleService {
@@ -99,11 +100,21 @@ export class RoleService {
   }
 
   async findAllRole(
-    pagination: PaginationQueryDto,
+    rolePagination: RolePaginationQueryDto,
   ): Promise<Paginated<RoleResponseDto>> {
+    const { name, ...pagination } = rolePagination;
+
+    const where: FindOptionsWhere<Role> = {};
+
+    if (name) {
+      const roleName = name.toUpperCase();
+      where.name = Like(`%${roleName}%`);
+    }
+
     const paginated = await this.paginationProvider.paginateQuery(
       pagination,
       this.roleRepository,
+      where,
     );
 
     return {

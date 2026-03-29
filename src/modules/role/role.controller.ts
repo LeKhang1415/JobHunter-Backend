@@ -14,6 +14,7 @@ import { ResponseMessage } from 'src/common/decorators/response-message.decorato
 import { UpdateRoleDto } from './dtos/update-role.dto';
 import { PaginationQueryDto } from 'src/common/pagination/dtos/pagination-query.dto';
 import { RequirePermissions } from 'src/common/decorators/permission.decorator';
+import { RolePaginationQueryDto } from './dtos/role-pagination-query.dto';
 
 @Controller('role')
 export class RoleController {
@@ -29,8 +30,8 @@ export class RoleController {
   @RequirePermissions('GET /role')
   @ResponseMessage('Lấy danh sách chức vụ thành công')
   @Get()
-  findAll(@Query() pagination: PaginationQueryDto) {
-    return this.roleService.findAllRole(pagination);
+  findAll(@Query() rolePagination: RolePaginationQueryDto) {
+    return this.roleService.findAllRole(rolePagination);
   }
 
   @RequirePermissions('POST /role')

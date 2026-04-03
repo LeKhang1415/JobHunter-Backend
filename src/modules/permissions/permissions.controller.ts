@@ -12,7 +12,6 @@ import { ResponseMessage } from 'src/common/decorators/response-message.decorato
 import { CreatePermissionDto } from './dtos/create-permission.dto';
 import { PermissionsService } from './permissions.service';
 import { UpdatePermissionDto } from './dtos/update-permission.dto';
-import { PaginationQueryDto } from 'src/common/pagination/dtos/pagination-query.dto';
 import { RequirePermissions } from 'src/common/decorators/permission.decorator';
 import { PermissionPaginationQueryDto } from './dtos/permission-pagination-query.dto';
 
@@ -32,6 +31,12 @@ export class PermissionsController {
   @ResponseMessage('Lấy toàn bộ quyền hạn (không phân trang) thành công')
   findAllWithoutPagination() {
     return this.permissionsService.findAllWithoutPagination();
+  }
+
+  @Get('role/:roleId')
+  @ResponseMessage('Lấy danh sách quyền hạn theo chức vụ thành công')
+  findByRoleId(@Param('roleId') roleId: string) {
+    return this.permissionsService.findByRoleId(roleId);
   }
 
   @RequirePermissions('POST /permissions')

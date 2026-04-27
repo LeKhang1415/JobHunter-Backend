@@ -14,6 +14,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { JobResponseDto } from './dtos/job-response.dto';
 import { UploadService } from '../upload/upload.service';
 import { UpdateJobDto } from './dtos/update-job.dto';
+import { JobPaginationQueryDto } from './dtos/job-pagination-query.dto';
+import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
 
 @Injectable()
 export class JobService {
@@ -25,6 +27,8 @@ export class JobService {
     private readonly companyService: CompanyService,
 
     private readonly uploadService: UploadService,
+
+    private readonly paginationProvider: PaginationProvider,
 
     @InjectRepository(Job)
     private readonly jobRepository: Repository<Job>,
@@ -206,6 +210,54 @@ export class JobService {
     }
 
     return this.mapToResponseDto(job);
+  }
+
+  async findAll(query: JobPaginationQueryDto) {
+    const { name, companyName, level, location } = query;
+
+    // 1. Khởi tạo QueryBuilder cơ bản (Join các bảng cần thiết)
+    const queryBuilder = this.jobRepository
+      .createQueryBuilder('job')
+      .leftJoinAndSelect('job.company', 'company')
+      .leftJoinAndSelect('company.companyLogo', 'companyLogo')
+      .leftJoinAndSelect('job.skills', 'skills')
+      .where('job.active = :active', { active: true });
+
+    // 2. Lắp ráp các điều kiện tìm kiếm (Filters)
+    if (name) {
+      queryBuilder.andWhere('job.name ILIKE :name', { name: `%${name}%` });
+    }
+
+    if (location) {
+      queryBuilder.andWhere('job.location ILIKE :location', {
+        location: `%${location}%`,
+      });
+    }
+
+    if (level && level !== 'all') {
+      queryBuilder.andWhere('job.level = :level', { level });
+    }
+
+    if (companyName) {
+      queryBuilder.andWhere('company.name ILIKE :companyName', {
+        companyName: `%${companyName}%`,
+      });
+    }
+
+    // (Tùy chọn) Sắp xếp công việc mới nhất lên đầu
+    // queryBuilder.orderBy('job.createdAt', 'DESC');
+
+    // 3. Truyền queryBuilder và DTO vào PaginationProvider để lấy dữ liệu phân trang
+    // Hàm này sẽ tự động tính toán skip, take và getCount()
+    const paginatedResult = await this.paginationProvider.paginateQueryBuilder(
+      query,
+      queryBuilder,
+    );
+
+    return {
+      ...paginatedResult, // Giữ nguyên object meta (itemsPerPage, totalItems, currentPage...)
+      data: paginatedResult.data.map((job) => this.mapToResponseDto(job)), // Ghi đè lại mảng data bằng DTO
+    };
   }
 
   async findByCompanyId(companyId: string): Promise<JobResponseDto[]> {

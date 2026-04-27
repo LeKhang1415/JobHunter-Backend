@@ -253,6 +253,8 @@ export class JobService {
         ? {
             id: job.company.id,
             name: job.company.name,
+            address: job.company.address,
+            logoUrl: job.company.companyLogo.logoUrl,
           }
         : null,
 

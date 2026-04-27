@@ -13,6 +13,8 @@ export class JobResponseDto {
   company: {
     id: string;
     name: string;
+    address: string;
+    logoUrl?: string;
   } | null;
 
   skills: {

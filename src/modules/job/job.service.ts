@@ -33,15 +33,12 @@ export class JobService {
     @InjectRepository(Job)
     private readonly jobRepository: Repository<Job>,
   ) {}
-  async create(
-    createJobDto: CreateJobDto,
-    isRecruiter: boolean,
-    user: JwtPayload,
-  ): Promise<JobResponseDto> {
+  async create(createJobDto: CreateJobDto): Promise<JobResponseDto> {
     if (new Date(createJobDto.startDate) >= new Date(createJobDto.endDate)) {
-      throw new BadRequestException('Ngày bắt đầu phải nhỏ hơn kết thúc');
+      throw new BadRequestException('Ngày bắt đầu phải nhỏ hơn kết thúc');
     }
-    let job = this.jobRepository.create({
+
+    const job = this.jobRepository.create({
       name: createJobDto.name,
       location: createJobDto.location,
       salary: createJobDto.salary,
@@ -52,49 +49,95 @@ export class JobService {
       endDate: createJobDto.endDate,
       active: createJobDto.active,
     });
-    if (isRecruiter) {
-      const existsUser = await this.usersService.findByEmail(user.email);
 
-      if (!existsUser) throw new NotFoundException('Không tìm thấy người dùng');
-
-      if (existsUser.company === null) {
-        throw new NotFoundException('Không thấy công ty người dùng');
-      }
-      job.company = existsUser.company;
-    } else {
-      if (createJobDto.companyId) {
-        const company = await this.companyService.findById(
-          createJobDto.companyId,
-        );
-
-        if (!company) {
-          throw new NotFoundException('Không thấy công ty người dùng');
-        }
-
-        job.company = company;
-      }
-    }
-
-    if (createJobDto.skillIds && createJobDto.skillIds.length > 0) {
-      const skills = await this.skillsService.findAllById(
-        createJobDto.skillIds,
+    if (createJobDto.companyId) {
+      const company = await this.companyService.findById(
+        createJobDto.companyId,
       );
-
-      if (skills?.length !== createJobDto.skillIds.length) {
-        throw new NotFoundException('Skill không tồn tại');
+      if (!company) {
+        throw new NotFoundException('Công ty không tồn tại');
       }
-
-      job.skills = skills;
+      job.company = company;
+    } else {
+      throw new BadRequestException(
+        'Admin phải cung cấp companyId khi tạo job',
+      );
     }
-    const savedJob = await this.jobRepository.save(job);
 
+    await this.assignSkillsToJob(job, createJobDto.skillIds);
+
+    const savedJob = await this.jobRepository.save(job);
+    return this.mapToResponseDto(savedJob);
+  }
+
+  async createForRecruiter(
+    createJobDto: CreateJobDto,
+    user: JwtPayload,
+  ): Promise<JobResponseDto> {
+    if (new Date(createJobDto.startDate) >= new Date(createJobDto.endDate)) {
+      throw new BadRequestException('Ngày bắt đầu phải nhỏ hơn kết thúc');
+    }
+
+    const job = this.jobRepository.create({
+      name: createJobDto.name,
+      location: createJobDto.location,
+      salary: createJobDto.salary,
+      quantity: createJobDto.quantity,
+      level: createJobDto.level,
+      description: createJobDto.description,
+      startDate: createJobDto.startDate,
+      endDate: createJobDto.endDate,
+      active: createJobDto.active,
+    });
+
+    const existsUser = await this.usersService.findByEmail(user.email);
+    if (!existsUser) throw new NotFoundException('Không tìm thấy người dùng');
+    if (!existsUser.company) {
+      throw new NotFoundException('Tài khoản chưa liên kết với công ty nào');
+    }
+
+    job.company = existsUser.company;
+
+    await this.assignSkillsToJob(job, createJobDto.skillIds);
+
+    const savedJob = await this.jobRepository.save(job);
     return this.mapToResponseDto(savedJob);
   }
 
   async update(
     id: string,
     updateJobDto: UpdateJobDto,
-    isRecruiter: boolean,
+  ): Promise<JobResponseDto> {
+    const job = await this.jobRepository.findOne({
+      where: { id },
+      relations: ['company', 'skills'],
+    });
+
+    if (!job) throw new NotFoundException('Không tìm thấy công việc');
+
+    this.validateDates(
+      updateJobDto.startDate ?? job.startDate,
+      updateJobDto.endDate ?? job.endDate,
+    );
+
+    const { companyId, skillIds, ...jobUpdates } = updateJobDto;
+    Object.assign(job, jobUpdates);
+
+    if (companyId) {
+      const company = await this.companyService.findById(companyId);
+      if (!company) throw new NotFoundException('Công ty không tồn tại');
+      job.company = company;
+    }
+
+    await this.assignSkillsToJob(job, skillIds);
+
+    const updated = await this.jobRepository.save(job);
+    return this.mapToResponseDto(updated);
+  }
+
+  async updateForRecruiter(
+    id: string,
+    updateJobDto: UpdateJobDto,
     user: JwtPayload,
   ): Promise<JobResponseDto> {
     const job = await this.jobRepository.findOne({
@@ -102,51 +145,29 @@ export class JobService {
       relations: ['company', 'skills'],
     });
 
-    if (!job) {
-      throw new NotFoundException('Không tìm thấy công việc');
-    }
+    if (!job) throw new NotFoundException('Không tìm thấy công việc');
 
-    const startDate = updateJobDto.startDate ?? job.startDate;
-    const endDate = updateJobDto.endDate ?? job.endDate;
+    this.validateDates(
+      updateJobDto.startDate ?? job.startDate,
+      updateJobDto.endDate ?? job.endDate,
+    );
 
-    if (new Date(startDate) >= new Date(endDate)) {
-      throw new BadRequestException('Ngày bắt đầu phải nhỏ hơn ngày kết thúc');
+    const existsUser = await this.usersService.findByEmail(user.email);
+    if (!existsUser) throw new NotFoundException('Không tìm thấy người dùng');
+    if (!existsUser.company) throw new NotFoundException('Không thấy công ty');
+
+    if (existsUser.company.id !== job.company.id) {
+      throw new BadRequestException(
+        'Bạn không có quyền chỉnh sửa công việc này',
+      );
     }
 
     const { companyId, skillIds, ...jobUpdates } = updateJobDto;
-
     Object.assign(job, jobUpdates);
 
-    if (isRecruiter) {
-      const existsUser = await this.usersService.findByEmail(user.email);
-
-      if (!existsUser) throw new NotFoundException('Không tìm thấy người dùng');
-      if (!existsUser.company)
-        throw new NotFoundException('Không thấy công ty');
-
-      if (existsUser.company.id !== job.company.id) {
-        throw new BadRequestException('Không có quyền chỉnh sửa');
-      }
-    }
-
-    if (!isRecruiter && companyId) {
-      const company = await this.companyService.findById(companyId);
-      if (!company) throw new NotFoundException('Công ty không tồn tại');
-      job.company = company;
-    }
-
-    if (skillIds) {
-      const skills = await this.skillsService.findAllById(skillIds);
-
-      if (skills?.length !== skillIds.length) {
-        throw new NotFoundException('Skill không tồn tại');
-      }
-
-      job.skills = skills;
-    }
+    await this.assignSkillsToJob(job, skillIds);
 
     const updated = await this.jobRepository.save(job);
-
     return this.mapToResponseDto(updated);
   }
 
@@ -317,6 +338,24 @@ export class JobService {
       dto.company = null;
       return dto;
     });
+  }
+
+  private validateDates(startDate: Date | string, endDate: Date | string) {
+    if (new Date(startDate) >= new Date(endDate)) {
+      throw new BadRequestException('Ngày bắt đầu phải nhỏ hơn ngày kết thúc');
+    }
+  }
+
+  private async assignSkillsToJob(job: Job, skillIds?: string[]) {
+    if (skillIds && skillIds.length > 0) {
+      const skills = await this.skillsService.findAllById(skillIds);
+      if (skills?.length !== skillIds.length) {
+        throw new NotFoundException('Một hoặc nhiều kỹ năng không tồn tại');
+      }
+      job.skills = skills;
+    } else if (skillIds && skillIds.length === 0) {
+      job.skills = [];
+    }
   }
 
   private async cleanupJob(job: Job) {

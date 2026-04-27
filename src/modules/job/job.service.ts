@@ -215,7 +215,6 @@ export class JobService {
   async findAll(query: JobPaginationQueryDto) {
     const { name, companyName, level, location } = query;
 
-    // 1. Khởi tạo QueryBuilder cơ bản (Join các bảng cần thiết)
     const queryBuilder = this.jobRepository
       .createQueryBuilder('job')
       .leftJoinAndSelect('job.company', 'company')
@@ -223,7 +222,6 @@ export class JobService {
       .leftJoinAndSelect('job.skills', 'skills')
       .where('job.active = :active', { active: true });
 
-    // 2. Lắp ráp các điều kiện tìm kiếm (Filters)
     if (name) {
       queryBuilder.andWhere('job.name ILIKE :name', { name: `%${name}%` });
     }
@@ -244,19 +242,64 @@ export class JobService {
       });
     }
 
-    // (Tùy chọn) Sắp xếp công việc mới nhất lên đầu
-    // queryBuilder.orderBy('job.createdAt', 'DESC');
-
-    // 3. Truyền queryBuilder và DTO vào PaginationProvider để lấy dữ liệu phân trang
-    // Hàm này sẽ tự động tính toán skip, take và getCount()
     const paginatedResult = await this.paginationProvider.paginateQueryBuilder(
       query,
       queryBuilder,
     );
 
     return {
-      ...paginatedResult, // Giữ nguyên object meta (itemsPerPage, totalItems, currentPage...)
-      data: paginatedResult.data.map((job) => this.mapToResponseDto(job)), // Ghi đè lại mảng data bằng DTO
+      ...paginatedResult,
+      data: paginatedResult.data.map((job) => this.mapToResponseDto(job)),
+    };
+  }
+
+  async findAllJobsForRecruiterCompany(
+    query: JobPaginationQueryDto,
+    user: JwtPayload,
+  ) {
+    const existsUser = await this.usersService.findByEmail(user.email);
+
+    if (!existsUser) {
+      throw new NotFoundException('Không tìm thấy người dùng');
+    }
+
+    if (!existsUser.company) {
+      throw new NotFoundException(
+        'Tài khoản của bạn chưa được liên kết với công ty nào',
+      );
+    }
+
+    const { name, level, location } = query;
+
+    const queryBuilder = this.jobRepository
+      .createQueryBuilder('job')
+      .leftJoinAndSelect('job.company', 'company')
+      .leftJoinAndSelect('company.companyLogo', 'companyLogo')
+      .leftJoinAndSelect('job.skills', 'skills')
+      .where('company.id = :companyId', { companyId: existsUser.company.id });
+
+    if (name) {
+      queryBuilder.andWhere('job.name ILIKE :name', { name: `%${name}%` });
+    }
+
+    if (location) {
+      queryBuilder.andWhere('job.location ILIKE :location', {
+        location: `%${location}%`,
+      });
+    }
+
+    if (level && level !== 'all') {
+      queryBuilder.andWhere('job.level = :level', { level });
+    }
+
+    const paginatedResult = await this.paginationProvider.paginateQueryBuilder(
+      query,
+      queryBuilder,
+    );
+
+    return {
+      ...paginatedResult,
+      data: paginatedResult.data.map((job) => this.mapToResponseDto(job)),
     };
   }
 

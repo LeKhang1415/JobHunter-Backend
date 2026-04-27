@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query, // Thêm Query
 } from '@nestjs/common';
 import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
 import { RequirePermissions } from 'src/common/decorators/permission.decorator';
@@ -16,8 +17,9 @@ import { CreateJobDto } from './dtos/create-job.dto';
 import { UpdateJobDto } from './dtos/update-job.dto';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { RoleEnum } from 'src/common/enums/role.enum';
+import { JobPaginationQueryDto } from './dtos/job-pagination-query.dto';
 
-@Controller('job')
+@Controller('jobs')
 export class JobController {
   constructor(private readonly jobService: JobService) {}
 
@@ -30,6 +32,22 @@ export class JobController {
     return this.jobService.create(createJobDto, isRecruiter, user);
   }
 
+  @RequirePermissions('GET /jobs/recruiter')
+  @ResponseMessage('Lấy danh sách công việc của công ty thành công')
+  @Get('recruiter')
+  findAllJobsForRecruiter(
+    @Query() query: JobPaginationQueryDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.jobService.findAllJobsForRecruiterCompany(query, user);
+  }
+  @RequirePermissions('GET /jobs')
+  @ResponseMessage('Lấy danh sách công việc thành công')
+  @Get()
+  findAll(@Query() query: JobPaginationQueryDto) {
+    return this.jobService.findAll(query);
+  }
+
   @RequirePermissions('GET /jobs/:id')
   @ResponseMessage('Lấy thông tin công việc thành công')
   @Get(':id')
@@ -38,7 +56,7 @@ export class JobController {
   }
 
   @RequirePermissions('GET /jobs/company/:companyId')
-  @ResponseMessage('Lấy danh sách công việc của công ty thành công')
+  @ResponseMessage('Lấy danh sách công việc theo công ty thành công')
   @Get('company/:companyId')
   findByCompanyId(@Param('companyId') companyId: string) {
     return this.jobService.findByCompanyId(companyId);
